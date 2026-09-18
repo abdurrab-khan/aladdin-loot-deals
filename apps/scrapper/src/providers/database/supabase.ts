@@ -41,8 +41,6 @@ export class SupabaseDatabase extends BaseDatabase {
       const productsForInsert = SupabaseTransformer.toDbProducts(products);
       const {data, error} = await this.supabaseClient.from("products").insert(productsForInsert).select();
 
-      console.log("Insert result:", data, "Error:", error)
-
       if (error) {
         throw error;
       }

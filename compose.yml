@@ -1,19 +1,4 @@
 services:
-  redis:
-    container_name: redis-db
-    image: redis:8.0
-    ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
-
   scrapper:
     container_name: aladdin-scrapper
     build:
@@ -32,9 +17,6 @@ services:
         - SCREENSHOT_SERVICE_URL=${SCREENSHOT_SERVICE_URL:? SCREENSHOT_SERVICE_URL is Required}
     ports:
       - "8080:8080"
-    depends_on:
-      redis:
-        condition: service_healthy
 
   screenshot-service:
     container_name: aladdin-screenshot
@@ -47,11 +29,7 @@ services:
         - SUPABASE_KEY=${SUPABASE_KEY:? SUPABASE_KEY is Required}
     ports:
       - "3000:3000"
-    depends_on:
-      redis:
-        condition: service_healthy
 
 volumes:
-  redis-data:
   screenshot-data:
   scrapper-data:
