@@ -1,18 +1,18 @@
-import React from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import React from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 export default function PageLoader() {
-    return (
-        <View style={styles.pageContainer}>
-            <ActivityIndicator size={"large"} />
-        </View>
-    )
+  return (
+    <View style={styles.pageContainer}>
+      <ActivityIndicator size={"large"} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    pageContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    }
-})
+  pageContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

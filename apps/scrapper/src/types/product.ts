@@ -41,6 +41,5 @@ export interface Product {
   };
   userId: string;
   platformId: string;
-  associatedAppId: string;
   cardScreenshotPath?: string | undefined;
 }

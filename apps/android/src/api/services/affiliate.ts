@@ -2,12 +2,12 @@ import type { Affiliate } from "@/types";
 import { supabase } from "../clients/supabase";
 
 export const addAffiliateLink = async (
-  appId: string,
+  userId: string,
   productId: string,
   platformId: string,
   affiliateUrl: string,
 ): Promise<Affiliate[]> => {
-  if (!affiliateUrl.trim() || !platformId.trim() || !appId.trim()) {
+  if (!affiliateUrl.trim() || !platformId.trim() || !userId.trim()) {
     throw new Error("Product url and affiliate url is required.");
   }
 
@@ -22,7 +22,7 @@ export const addAffiliateLink = async (
     const response = await supabase
       .from("affiliate_urls")
       .insert({
-        app_id: appId,
+        user_id: userId,
         product_id: productId,
         website_id: platformId,
         affiliate_url: affiliateUrl,

@@ -21,7 +21,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 
 import toast from "@/utils";
 
-import useAppContext from "@/context/AppContext";
+import useAppSession from "@/context/AppContext";
 
 import queryClient from "@/api/clients/queryClient";
 import type { Affiliate, Product } from "@/types";
@@ -41,7 +41,7 @@ export default function AddAffiliate({
   product,
   setVisible,
 }: AddAffiliateProps) {
-  const { app } = useAppContext();
+  const { user } = useAppSession();
 
   const [groupedAffiliateUrls, setGroupedAffiliateUrls] = useState<Affiliate[]>(
     [],
@@ -70,7 +70,7 @@ export default function AddAffiliate({
             productId: product_id,
             id: `grouped_${Date.now()}`,
             url: affiliateUrl,
-            isDefault: false,
+            isDefault: groupedAffiliateUrls.length === 0,
             createdAt: new Date().toISOString(),
           },
         ];
@@ -88,7 +88,7 @@ export default function AddAffiliate({
           }),
         );
       } else {
-        await addAffiliateLink(app?.id!, product_id, website.id, affiliateUrl); // Add affiliate link
+        await addAffiliateLink(user?.id!, product_id, website.id, affiliateUrl); // Add affiliate link
         // Invalidate the query to trigger a refetch of the affiliate links
         queryClient.invalidateQueries({
           queryKey: ["affiliateUrls", product_id],

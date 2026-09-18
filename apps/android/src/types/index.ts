@@ -1,13 +1,5 @@
 export type SocialMedia = "telegram" | "instagram" | "facebook" | "x";
 
-export interface Application {
-  id: string;
-  name: string;
-  is_active: boolean;
-  logo: string | null;
-  created_at: string;
-}
-
 export interface Affiliate {
   id: string;
   url: string;
@@ -30,7 +22,7 @@ export type Website = {
 };
 
 export interface Product {
-  app_id: string;
+  user_id: string;
   name: string;
   url: string;
   price: string;

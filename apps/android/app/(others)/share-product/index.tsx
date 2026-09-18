@@ -7,7 +7,7 @@ import FormSkeleton from "./_components/FormSkeleton";
 import { supabase } from "@/api/clients/supabase";
 import toast from "@/utils";
 import NotFound from "./_components/NotFound";
-import useAppContext from "@/context/AppContext";
+import useAppSession from "@/context/AppContext";
 
 export interface ProductImage {
   id: string;
@@ -37,7 +37,7 @@ export interface ProductData {
 }
 
 export default function CaptionEditor() {
-  const { app } = useAppContext();
+  const { user } = useAppSession();
 
   const { ids: rawIds = "" } = useLocalSearchParams();
   const ids = rawIds.toString().split(",");
@@ -48,7 +48,7 @@ export default function CaptionEditor() {
       queryFn: async (): Promise<ProductData> => {
         const { data, error } = await supabase.rpc("fetch_product", {
           pid: id,
-          appid: app?.id,
+          userid: user?.id,
         });
 
         if (error !== null) {
@@ -59,7 +59,7 @@ export default function CaptionEditor() {
         }
         return data;
       },
-      enable: !!app,
+      enable: !!user?.id,
     })),
     combine: (results) => ({
       data: results.map((result) => result.data).filter((p) => p !== undefined),

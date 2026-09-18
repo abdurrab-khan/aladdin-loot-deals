@@ -20,7 +20,7 @@ class CrawlerUtils {
   private subCategory: string;
   private subCategoryDetails: SubCategory;
   private ProductPrivateInfo: Record<
-    "userId" | "platformId" | "associatedAppId",
+    "userId" | "platformId",
     string
   >;
 
@@ -31,7 +31,7 @@ class CrawlerUtils {
     subCategory: string,
     subCategoryDetails: SubCategory,
     productPrivateInfo: Record<
-      "userId" | "platformId" | "associatedAppId",
+      "userId" | "platformId",
       string
     >,
   ) {
@@ -251,7 +251,6 @@ class CrawlerUtils {
         isGrouped: true,
         userId: this.ProductPrivateInfo.userId,
         platformId: this.ProductPrivateInfo.platformId,
-        associatedAppId: this.ProductPrivateInfo.associatedAppId,
         cardScreenshotPath: cardScreenshotPath || undefined,
       };
     }

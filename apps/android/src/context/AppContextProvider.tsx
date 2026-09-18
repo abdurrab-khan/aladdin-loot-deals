@@ -1,35 +1,39 @@
-import { useCallback, useMemo, useState } from "react";
+import {  useCallback, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { AppContext } from "./AppContext";
-import { Application } from "@/types";
+import { supabase } from "@/api/clients/supabase";
+
+import toast from "@/utils";
+import { SessionContext } from "./AppContext";
 
 export default function AppContextProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [session, setSession] = useState<User | null>(null);
-  const [app, setApp] = useState<Application | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
-  const addSession = useCallback((session: User | null) => {
-    setSession(session);
-  }, []);
+  const addSession = useCallback((user: User | null) => {
+    setUser(user);
+  }, [])
 
-  const addAppData = useCallback((appData: Application) => {
-    setApp(appData);
-  }, []);
-
-  const contextValue = useMemo(
-    () => ({
-      app,
-      session,
-      addSession,
-      addAppData,
-    }),
-    [app, session, addSession, addAppData],
-  );
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if(error) throw error;
+      if (session) {
+        setUser(session.user);
+      }
+    }).catch((err) => {
+      const errMsg = err?.message ?? "Unknown error while getting session";
+      toast(errMsg);
+    }).finally(() => {
+      setIsLoading(false);
+    })
+  }, [])
 
   return (
-    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
+    <SessionContext.Provider value={{user, isLoading, addSession}}>
+      {children}
+    </SessionContext.Provider>
   );
 }

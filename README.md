@@ -1,222 +1,203 @@
-
-<p align="center">
-  <img src="assets/aladdin-demo.gif" alt="Aladdin Loot Deals Demo GIF" width="100%">
-  <br>
-</p>
-
-<br>
-
 <div align="center">
 
-# 🧞 Aladdin Loot Deals
+<img src="assets/aladdin-logo.png" width="140" alt="Aladdin logo" />
 
-### Your ultimate deal-curation & social-sharing command center
+## Aladdin
 
-Scrape → Curate → Add Affiliate Links → Share to Social Media
+**Find deals. Pick the good ones. Post them everywhere.**
+
+Scrapes Amazon.in and Flipkart for discounts, and gives you a mobile app to
+curate the results, attach affiliate links, and push finished deal posts to
+your channels.
+
+[![Expo](https://img.shields.io/badge/Expo%20SDK-54-blueviolet?logo=expo)]()
+[![React Native](https://img.shields.io/badge/React%20Native-0.81-61DAFB?logo=react)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)]()
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase)]()
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)]()
+[![License](https://img.shields.io/badge/License-MIT-green)]()
 
 <br>
 
-[![Expo SDK 54](https://img.shields.io/badge/Expo%20SDK-54-blueviolet?logo=expo)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)]()
-[![React Native](https://img.shields.io/badge/React%20Native-0.81-61DAFB?logo=react)]()
-[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase)]()
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)]()
+<img src="assets/aladdin.gif" alt="Aladdin app demo" width="360" />
 
 </div>
 
----
+<br>
 
-## 🪄 What is Aladdin?
+## Why this exists
 
-Aladdin is an **end-to-end deal curation platform** for affiliate marketers & discount hunters. It automates the entire lifecycle of sharing deals on social media:
+Running deal channels on Telegram always came down to the same loop: open
+Amazon, hunt for discounts, screenshot the product, write a caption, paste an
+affiliate link, repeat for Flipkart, then do it all again tomorrow.
 
-| Step | What happens |
-|------|-------------|
-| **1. Scrape** 🤖 | Browser bots crawl **Amazon.in** & **Flipkart** to find the hottest deals |
-| **2. Curate** 🎯 | Browse, search, filter, and hand-pick products from your mobile app |
-| **3. Set Affiliate Links** 🔗 | Attach your affiliate URLs to earn commissions |
-| **4. Share** 📢 | Post polished deal collages to **Telegram, Instagram, Facebook, & X** |
+Aladdin automates that loop. A scraper keeps an eye on both stores around the
+clock, everything it finds lands in a database, and the mobile app lets you
+browse the feed, pick the deals actually worth posting, and share a polished
+collage with caption and hashtags in one tap. The boring parts — screenshots,
+image cleanup, posting — happen without you.
 
----
+## How it fits together
 
-## 🏗️ System Architecture
+Four services, each doing one job:
+
+- **Scraper** — `apps/scrapper`
+  Playwright bots crawl Amazon.in and Flipkart across a rotating catalog of
+  categories. Junk gets filtered out (low discounts, unavailable stock,
+  duplicates via Redis) and what survives is written to Supabase. Screenshot
+  jobs are queued as it goes. It runs two ways: an on-demand Express API on
+  port 8080, or a scheduled cron run.
+
+- **Screenshot service** — `apps/screenshot`
+  A Puppeteer worker that picks screenshot jobs off a BullMQ queue. Two
+  modes: *full* mode crops the product image and price off a detail page,
+  and *grouped* mode grabs up to four matching cards from search results
+  (sponsored ads and out-of-range prices are dropped). Results upload
+  straight to Supabase Storage. Runs on port 3000, with a retry queue for
+  anything that fails.
+
+- **Mobile app** — `apps/android`
+  Expo / React Native, and where you'll actually spend your time. Infinite
+  scrolling product feed with search and category filters, long-press to
+  select up to 16 deals at once, manage affiliate links per product,
+  generate a shareable collage, edit the caption, and post it.
+
+- **Telegram edge function** — `apps/edge-function`
+  A small Deno function deployed on Supabase. It takes the collage, caption,
+  and hashtags, and posts them to your Telegram channel via the Bot API.
+  If Telegram isn't among the selected platforms, it quietly does nothing.
 
 ```
-                    ┌──────────────────────────┐
-                    │    📱 Aladdin App         │
-                    │  (React Native / Expo)    │
-                    │   Deal curation & share   │
-                    └────────┬─────────────────┘
-                             │
-         ┌───────────────────┼───────────────────┐
-         ▼                   ▼                   ▼
-┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐
-│   🔍 Scrapper   │  │  📸 Screenshot  │  │  🚀 Edge     │
-│   (Playwright)  │  │  (Puppeteer)    │  │  Function    │
-│   Crawls deals  │  │  Captures       │  │  (Deno)      │
-│   on Amazon/    │  │  product images │  │  Posts to    │
-│   Flipkart      │  │  with BullMQ    │  │  Telegram    │
-└────────┬────────┘  └────────┬────────┘  └──────┬───────┘
-         │                    │                   │
-         ▼                    ▼                   ▼
-    ┌─────────────────────────────────────────────────┐
-    │          ☁️  Supabase + Redis + Docker           │
-    │     Database · Auth · Storage · Queues          │
-    └─────────────────────────────────────────────────┘
+  ┌──────────────┐   jobs    ┌───────────────────┐  images  ┌──────────┐
+  │   Scraper    ├──────────▶│ Screenshot service├─────────▶│ Supabase │
+  │ (Playwright) │           │    (Puppeteer)    │          │ Storage  │
+  └──────┬───────┘           └───────────────────┘          └────┬─────┘
+         │ products                        Supabase Auth         │
+         ▼                                     │                ▼
+  ┌─────────────────────────────────────────────▼────────────────────┐
+  │                        Mobile app (Expo)                          │
+  │              browse · curate · affiliate links · share            │
+  └───────────────────────────────┬──────────────────────────────────┘
+                                  │  post
+                                  ▼
+                       ┌────────────────────┐
+                       │ Telegram via Edge  │
+                       │      Function      │
+                       └────────────────────┘
 ```
 
----
+## Repo layout
 
-## 📦 The Apps (What's Inside)
+```
+apps/
+├── android/         Expo mobile app (deal curation & sharing)
+├── scrapper/        Playwright scraper + Express API
+├── screenshot/      Puppeteer screenshot worker (BullMQ)
+└── edge-function/   Supabase edge function (Telegram posting)
+assets/              Logo and demo media
+compose.yml          Docker setup for the two Node services
+```
 
-### 1. 📱 Mobile App — `apps/android`
-**React Native + Expo** app for deal curators. Browse scraped products, search & filter, add affiliate links, select multiple deals, generate shareable image collages with watermark, and post to social media in one tap.
+<br>
 
-<details>
-<summary><b>✨ Key Features</b></summary>
+## Getting started
 
-| Feature | Detail |
-|---------|--------|
-| Auth | Email/password via Supabase Auth |
-| Product Feed | Infinite-scroll FlatList with search & category filters |
-| Deal Selection | Long-press to select, batch share or delete (up to 16) |
-| Affiliate Links | Add/remove/set-default per product |
-| Collage Generator | Auto-merge product images into a shareable grid |
-| Caption Editor | AI-augmented captions + hashtag suggestions |
-| Multi-Platform Share | Telegram · Instagram · Facebook · X in one go |
+You'll need:
 
-</details>
+- **Node.js 22+** and **pnpm** (the two Node services are separate pnpm projects — there's no root package.json)
+- **Docker** for running the scraper and screenshot service
+- **Redis** reachable from both services (the compose file doesn't manage it — run your own or point `REDIS_HOST` at an existing one)
+- A **Supabase** project (Postgres, Auth, and Storage)
+- An Android device or emulator for the app
 
-### 2. 🤖 Scrapper Service — `apps/scrapper`
-**Playwright + Express** service that autonomously crawls **Amazon.in** and **Flipkart** to find discounted products. Runs with smart catalog rotation across 15+ categories, deduplicates via Redis, and enqueues screenshot jobs.
+### 1. Clone and configure
 
-<details>
-<summary><b>✨ Key Features</b></summary>
-
-| Feature | Detail |
-|---------|--------|
-| Dual Engine | Separate scrapers optimized for Amazon.in & Flipkart |
-| Catalog Rotation | Fair scheduling across 55+ subcategories |
-| Brand Grouping | Automatically groups products by brand |
-| Price Validation | Filters by discount %, price range, and availability |
-| Anti-Detection | Random user-agents & human-like delays |
-| Fire & Forget | Async API returns immediately, scrapes in background |
-
-</details>
-
-### 3. 📸 Screenshot Service — `apps/screenshot`
-**Puppeteer + BullMQ** microservice that takes product screenshots. Supports two modes — **Full** (product detail page crop) and **Grouped** (search results grid with price validation). Uploads results directly to Supabase Storage.
-
-<details>
-<summary><b>✨ Key Features</b></summary>
-
-| Feature | Detail |
-|---------|--------|
-| Full Screenshot | Crops product image + price section from detail page |
-| Grouped Screenshot | Captures up to 4 valid product cards from search results |
-| Sponsored Filter | Removes sponsored/ads cards automatically |
-| Price Validation | Only captures products within specified price range |
-| Concurrency | BullMQ queue with 5 parallel jobs + retry queue |
-
-</details>
-
-### 4. 🚀 Edge Function — `apps/edge-function`
-**Deno + Telegram Bot API** serverless function that bridges Aladdin to Telegram. Called by the mobile app to post deal collages with captions & hashtags directly to your Telegram channel.
-
-<details>
-<summary><b>✨ Key Features</b></summary>
-
-| Feature | Detail |
-|---------|--------|
-| Single Purpose | Posts product image + caption to Telegram |
-| HTML Captions | Supports rich formatting in captions |
-| Graceful Skip | Silently skips if Telegram is not selected |
-| CORS Enabled | Accepts cross-origin requests |
-
-</details>
-
----
-
-## 🛠️ Quick Start
-
-### Prerequisites
-- Node.js 22+
-- Docker & Docker Compose
-- pnpm / bun / npm
-- Supabase account
-- Redis
-
-### 1️⃣ Clone & Install
 ```bash
-git clone https://github.com/your-username/aladdin-project.git
-cd aladdin-project
+git clone git@github.com:abdurrab-khan/aladdin-scrapper.git
+cd aladdin-scrapper
 
-# Install dependencies per app
-cd apps/android && bun install      # Mobile app
-cd ../scrapper && pnpm install      # Scrapper
-cd ../screenshot && pnpm install    # Screenshot service
-```
-
-### 2️⃣ Set Up Environment
-```bash
 cp .env.example .env
-# Fill in your Supabase credentials, Redis config, and platform IDs
+# Fill in USER_ID, platform IDs, Supabase credentials, Redis password,
+# and your Telegram bot token / chat ID
 ```
 
-### 3️⃣ Run with Docker (Infrastructure)
+### 2. Bring up the services
+
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
-Starts Redis, Scrapper, and Screenshot service together.
 
-### 4️⃣ Start the Mobile App
+This starts the scraper on port **8080** and the screenshot service on port
+**3000**. Redis is expected to be running already.
+
+### 3. Run the scraper
+
+Either trigger it through the API, or run it on a schedule:
+
+```bash
+cd apps/scrapper
+pnpm install
+pnpm cron
+```
+
+### 4. Start the mobile app
+
 ```bash
 cd apps/android
+npm install
 npx expo start
 ```
 
-### 5️⃣ Deploy Edge Function
+Log in with a Supabase account and you should see whatever the scraper has
+collected so far.
+
+### 5. Deploy the edge function
+
 ```bash
 cd apps/edge-function
 supabase functions deploy share-product
 ```
 
----
+Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` as function secrets, and the
+app can post straight to your channel from the share screen.
 
-## 🧭 Environment Variables
+## Environment variables
 
-| Variable | Where | Purpose |
-|----------|-------|---------|
-| `SUPABASE_URL` | Scrapper, Screenshot | Supabase project URL |
-| `SUPABASE_KEY` | Scrapper, Screenshot, Mobile | API/anon key |
-| `REDIS_HOST` / `PORT` / `PASSWORD` | Scrapper, Screenshot | Redis cache & queue config |
-| `USER_ID` / `APP_ID` | Root `.env` | Default owner identifiers |
-| `AMAZON_PLATFORM_ID` / `FLIPKART_PLATFORM_ID` | Root `.env` | Platform DB references |
-| `TELEGRAM_BOT_TOKEN` / `CHAT_ID` | Edge Function | Telegram integration |
+Everything lives in the root `.env` — see `.env.example` for the template:
+
+| Variable | Used by | What it is |
+| --- | --- | --- |
+| `USER_ID` | Scrapper | Owner ID attached to scraped products |
+| `AMAZON_PLATFORM_ID` / `FLIPKART_PLATFORM_ID` | Scrapper | Platform rows in the database |
+| `SUPABASE_URL` / `SUPABASE_KEY` / `SUPABASE_BUCKET` | Scrapper, Screenshot, Mobile | Supabase project and storage bucket |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Scrapper, Screenshot | Redis connection (dedupe cache + BullMQ) |
+| `SCREENSHOT_SERVICE_URL` | Scrapper | Where the scraper enqueues screenshot jobs |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Edge function | Telegram bot credentials |
 | `EXPO_PUBLIC_SUPABASE_*` | Mobile app | Supabase client config |
 
----
+## Tech stack
 
-## 🧩 Tech Stack Summary
+- **Mobile:** Expo SDK 54, React Native 0.81, expo-router, Zustand, TanStack Query, react-hook-form + Zod
+- **Scraper:** Node 22, Playwright, Express 5, Zod, Supabase JS, Redis
+- **Screenshot:** Node 22, Puppeteer, BullMQ, ioredis, Express 5
+- **Edge function:** Deno, Telegram Bot API
+- **Infrastructure:** Supabase (Postgres / Auth / Storage), Redis, Docker Compose, EAS Build
 
-| Layer | Technology |
-|-------|-----------|
-| **Mobile** | React Native 0.81 · Expo SDK 54 · Zustand · TanStack Query |
-| **Scraper** | Node.js 22 · Playwright · Express 5 · Zod |
-| **Screenshot** | Node.js 22 · Puppeteer · BullMQ · ioredis |
-| **Edge Function** | Deno · Telegram Bot API · Supabase Functions |
-| **Database** | Supabase (PostgreSQL + Storage) |
-| **Cache/Queue** | Redis 8 |
-| **Infra** | Docker Compose · EAS Build |
+## Known limitations
 
----
+Worth being upfront about:
 
-## 📄 License
+- **Telegram is the only share target right now.** Instagram, Facebook, and X
+  are planned — the share flow in the app is already designed around multiple
+  platforms, so it's a matter of wiring up the remaining targets.
+- **Scrapers drift.** Amazon and Flipkart change their markup now and then,
+  and when they do, selectors break. They're kept in dedicated selector files
+  per store, so fixes stay contained.
+- **Anti-bot measures exist on both stores.** Random user agents and
+  human-like delays help, but aggressive rate limiting can still slow a run
+  down.
+
+## License
 
 [MIT](LICENSE)
 
----
-
-<div align="center">
-  Made with 🧞‍♂️ by affiliate marketers, for affiliate marketers
-</div>

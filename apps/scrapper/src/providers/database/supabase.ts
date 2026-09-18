@@ -1,20 +1,16 @@
 import { readFileSync } from "node:fs";
 import { unlink } from "node:fs/promises";
+import { BaseDatabase } from "./interfaces.js";
+import { SupabaseTransformer } from "./utils/supabase-transformer.js";
 import {
   createClient,
   SupabaseClient as SupabaseJSClient,
 } from "@supabase/supabase-js";
-import { BaseDatabase } from "./interfaces.js";
-import { SupabaseTransformer } from "./utils/supabase-transformer.js";
-import type { Product } from "../../types/product.js";
-import { configDotenv } from "dotenv";
 
-configDotenv({
-  path: "../../.env",
-});
+import type { Product } from "../../types/product.js";
 
 export class SupabaseDatabase extends BaseDatabase {
-  private supabaseClient: SupabaseJSClient;
+  public supabaseClient: SupabaseJSClient;
 
   constructor() {
     super();
@@ -43,13 +39,7 @@ export class SupabaseDatabase extends BaseDatabase {
 
     try {
       const productsForInsert = SupabaseTransformer.toDbProducts(products);
-
-      const { data, error } = await this.supabaseClient.rpc(
-        "insert_products_v2",
-        {
-          products: productsForInsert,
-        },
-      );
+      const {data, error} = await this.supabaseClient.from("products").insert(productsForInsert).select();
 
       if (error) {
         throw error;

@@ -1,12 +1,12 @@
-import { Colors } from "@/constants/Colors";
-import useAppContext from "@/context/AppContext";
-import { getAppData } from "@/api/services/app";
-import { supabase } from "@/api/clients/supabase";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
+import { supabase } from "@/api/clients/supabase";
+
+import { Colors } from "@/constants/Colors";
+import useAppSession from "@/context/AppContext";
 
 export default function RootNavigator() {
-  const { session, addSession, addAppData } = useAppContext();
+  const { user, addSession } = useAppSession();
 
   useEffect(() => {
     const {
@@ -21,19 +21,12 @@ export default function RootNavigator() {
       if (_event === "SIGNED_IN" || _event === "TOKEN_REFRESHED") {
         if (session?.user) {
           addSession(session.user);
-
-          // Let's find app data and add them into the state
-          const appData = await getAppData(session.user.id);
-
-          if (appData) {
-            addAppData(appData);
-          }
         }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [addSession, addAppData]);
+  }, [addSession]);
 
   return (
     <Stack
@@ -44,7 +37,7 @@ export default function RootNavigator() {
         },
       }}
     >
-      <Stack.Protected guard={session !== null}>
+      <Stack.Protected guard={user !== null}>
         <Stack.Screen
           name="(home)"
           options={{
@@ -58,7 +51,7 @@ export default function RootNavigator() {
           }}
         />
       </Stack.Protected>
-      <Stack.Protected guard={session === null}>
+      <Stack.Protected guard={user === null}>
         <Stack.Screen
           name="(auth)"
           options={{

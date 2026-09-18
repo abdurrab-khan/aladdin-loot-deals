@@ -22,7 +22,7 @@ export async function runScrape(
   cache: BaseCache,
 ): Promise<void> {
   const selections = Array.isArray(input) ? input : [input];
-  
+
   try {
     for (let i = 0; i < selections.length; i++) {
       const selection = selections[i]!;
@@ -71,7 +71,7 @@ async function processTask(
   console.log(`Starting ${category}:${task.name} product scraping...`);
 
   const scrappedProducts = await scrapeProducts(task.name, task.details, cache);
-  
+
   if (!scrappedProducts || scrappedProducts.length === 0) {
     console.warn(`No products scraped for ${category}:${task.name}.`);
     return;
@@ -160,7 +160,7 @@ async function cleanupTempFiles() {
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = nodePath.dirname(__filename);
-    
+
     // products directory is in apps/scrapper/products
     const productsDir = nodePath.resolve(__dirname, "../../products");
     // product_images directory is in apps/product_images

@@ -19,7 +19,6 @@ export interface DbProductInsert {
   product_brand: string;
   product_category: string | null;
   is_grouped: boolean;
-  app_id: string;
   user_id: string;
   website_id: string;
 }
@@ -49,7 +48,6 @@ export class ProductMapper {
       product_brand: details.brand,
       product_category: product.category || null,
       is_grouped: product.isGrouped,
-      app_id: product.associatedAppId,
       user_id: product.userId,
       website_id: product.platformId,
     };
@@ -64,7 +62,6 @@ export class ProductMapper {
       category: string;
       website: E_COMMERCE;
       userId: string;
-      appId: string;
       platformId: string;
       maxDiscountForFullPage: number;
     }
@@ -98,7 +95,6 @@ export class ProductMapper {
       },
       userId: metadata.userId,
       platformId: metadata.platformId,
-      associatedAppId: metadata.appId,
     };
   }
 
@@ -112,7 +108,6 @@ export class ProductMapper {
       category: dbRow["product_category"] || originalProduct?.category || "",
       platformId: dbRow["website_id"] || originalProduct?.platformId || "",
       userId: dbRow["user_id"] || originalProduct?.userId || "",
-      associatedAppId: dbRow["app_id"] || originalProduct?.associatedAppId || "",
       isGrouped: dbRow["is_grouped"] ?? originalProduct?.isGrouped ?? false,
       details: originalProduct?.details || ({} as any),
       images: originalProduct?.images || ({} as any),

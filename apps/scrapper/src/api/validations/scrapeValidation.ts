@@ -34,7 +34,7 @@ export function buildSelectionFromRequest(
   const categoryKey = Object.keys(CATALOG_CONFIG).find(
     (k) => k.toLowerCase() === categoryName.toLowerCase()
   );
-  
+
   const categoryConfig = categoryKey ? CATALOG_CONFIG[categoryKey] : undefined;
 
   if (!categoryConfig) {
@@ -45,7 +45,7 @@ export function buildSelectionFromRequest(
   const subCategoryKey = Object.keys(categoryConfig.subCategories).find(
     (k) => k.toLowerCase() === subCategoryName.toLowerCase()
   );
-  
+
   let subCatDetails = subCategoryKey ? categoryConfig.subCategories[subCategoryKey] : undefined;
 
   if (!subCatDetails && categoryConfig.lowPriorityCategories) {
@@ -93,8 +93,6 @@ export function buildSelectionFromRequest(
     urls: generatedUrls as any,
   };
 
-  console.log("Generated URLs:", generatedUrls);
-
   return {
     category: categoryKey || categoryName,
     tasks: [
@@ -111,9 +109,8 @@ export function validateScrapeRequest(
   request: any
 ): ScrapeRequestBody | string {
   const result = scrapeRequestSchema.safeParse(request);
-  
+
   if (!result.success) {
-    console.error("Validation error:", result.error.format());
     const firstIssue = result.error.issues[0];
     if (firstIssue) {
       return `Invalid input: ${firstIssue.path.join(".")} - ${firstIssue.message}`;

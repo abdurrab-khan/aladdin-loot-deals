@@ -7,7 +7,7 @@ import { supabase } from "../clients/supabase";
 
 // interface getProducts
 interface getProductsProps {
-  appId: string;
+  userId: string;
   start?: number;
   end?: number;
   query?: string | null;
@@ -16,7 +16,7 @@ interface getProductsProps {
 
 // cspell: ignore supabase
 export const getProducts = async ({
-  appId,
+  userId,
   start = 0,
   end = 9,
   categoryValue = null,
@@ -26,7 +26,7 @@ export const getProducts = async ({
     let queryBuilder = supabase
       .from("products_v2")
       .select("*")
-      .eq("app_id", appId);
+      .eq("user_id", userId);
 
     // Applying filter on query and category
     if (categoryValue || query) {
@@ -184,11 +184,11 @@ export const deleteProductImage = async (
 };
 
 export const getProductCategories = async (
-  appId: string,
+  userId: string,
 ): Promise<string[]> => {
   try {
     const { data, error } = await supabase.rpc("fetch_category", {
-      p_app_id: appId,
+      user_id: userId,
     });
 
     if (error) {

@@ -1,21 +1,14 @@
-import { Application } from "@/types";
 import { User } from "@supabase/supabase-js";
 import { createContext, useContext } from "react";
 
-interface AppContextType {
-  app: Application | null;
-  session: User | null;
-  addSession: (session: User | null) => void;
-  addAppData: (appData: Application) => void;
+interface AppSessionType {
+  user: User | null;
+  isLoading: boolean;
+  addSession: (user: User | null) => void;
 }
 
-export const AppContext = createContext<AppContextType>({
-  app: null,
-  session: null,
-  addSession: (session: User | null) => {},
-  addAppData: (appData: Application) => {},
-});
+export const SessionContext = createContext<AppSessionType>({ user: null, isLoading: true, addSession: () => {} });
 
-const useAppContext = () => useContext(AppContext);
+const useAppSession = () => useContext(SessionContext);
 
-export default useAppContext;
+export default useAppSession;

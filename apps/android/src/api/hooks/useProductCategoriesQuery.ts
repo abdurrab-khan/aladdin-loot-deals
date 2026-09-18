@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProductCategories } from "@/api/services/product";
+import useAppSession from "@/context/AppContext";
 
-export const useProductCategoriesQuery = (appId?: string) => {
+export const useProductCategoriesQuery = () => {
+  const { user } = useAppSession();
   return useQuery({
     queryKey: ["categories"],
     queryFn: () => {
-      if (!appId) return [];
-      return getProductCategories(appId);
+      return getProductCategories(user?.id!);
     },
-    enabled: !!appId,
+    enabled: !!user?.id,
   });
 };

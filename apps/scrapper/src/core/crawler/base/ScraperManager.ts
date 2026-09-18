@@ -28,11 +28,11 @@ export class ScraperManager {
   private subCategoryDetails: SubCategory;
   private crawlerUtils: CrawlerUtils;
   private maxProductsToFetch: number;
-  
+
   private emptyPageThreshold: number = 0;
   private productsByBrand = new Map<string, number>();
   private alreadyProcessedProducts = new Set<string>();
-  private productPrivateInfo: Record<"userId" | "platformId" | "associatedAppId", string>;
+  private productPrivateInfo: Record<"userId" | "platformId", string>;
   private getBrandSelector: (page: Page, brand: string) => Promise<ElementHandle<HTMLElement | SVGElement> | null>;
 
   constructor(
@@ -60,7 +60,6 @@ export class ScraperManager {
     this.productPrivateInfo = {
       userId: process.env["USER_ID"] || "",
       platformId: platformId,
-      associatedAppId: process.env["APP_ID"] || "",
     };
 
     this.crawlerUtils = new CrawlerUtils(
@@ -139,7 +138,6 @@ export class ScraperManager {
           category: this.subCategory,
           website: this.website,
           userId: this.productPrivateInfo.userId,
-          appId: this.productPrivateInfo.associatedAppId,
           platformId: this.productPrivateInfo.platformId,
           maxDiscountForFullPage: this.subCategoryDetails.maxDiscountForFullPageScreenshot,
         });

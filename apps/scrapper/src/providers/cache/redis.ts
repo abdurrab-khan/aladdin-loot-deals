@@ -1,5 +1,10 @@
 import { createClient } from "redis";
 import { BaseCache } from "./interfaces.js";
+import { configDotenv } from "dotenv";
+
+configDotenv({
+  path: "../../.env",
+});
 
 export class RedisDB extends BaseCache {
   private host: string;

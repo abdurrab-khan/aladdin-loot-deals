@@ -1,5 +1,4 @@
 import { Colors } from "@/constants/Colors";
-import useAppContext from "@/context/AppContext";
 import { useProductCategoriesQuery } from "@/api/hooks/useProductCategoriesQuery";
 import { useProductStore } from "@/store/useProductStore";
 import { LinearGradient } from "expo-linear-gradient";
@@ -57,8 +56,7 @@ const SignoutBtn = () => {
 };
 
 export default function Home() {
-  const { app } = useAppContext();
-  const { data: rawCategories } = useProductCategoriesQuery(app?.id);
+  const { data: rawCategories } = useProductCategoriesQuery();
   const { searchQuery, currentCategory, setSearchQuery, setCategory } =
     useProductStore();
 
